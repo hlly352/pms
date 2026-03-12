@@ -27,4 +27,8 @@ class ProjectStageStep extends Model
         // 步骤表的主键，对应任务表里的 project_stage_step_id
         return $this->hasOne(Task::class, 'project_stage_step_id');
     }
+    public function stage()
+    {
+        return $this->belongsTo(ProjectStage::class, 'project_stage_id');
+    }
 }

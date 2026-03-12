@@ -25,6 +25,11 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AllocationController;
 use App\Http\Controllers\FinanceOverviewController;
 use App\Http\Controllers\ReadingNoteController;
+use App\Http\Controllers\PrintReportController;
+use App\Http\Controllers\TimeAccountController;
+use App\Http\Controllers\TimeAllocationController;
+use App\Http\Controllers\TimeDashboardController;
+use App\Http\Controllers\ProfileController;
 
 
 
@@ -39,9 +44,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', function (Request $request) {
         return $request->user();
     });
+    // 🌟 新增：个人设置 (修改邮箱和密码)
+    Route::put('/user/email', [ProfileController::class, 'updateEmail']);
+    Route::put('/user/password', [ProfileController::class, 'updatePassword']);
+    // 原有的 RESTful 路由（自动包含 index, store, update, destroy 等）
+    Route::apiResource('users', UserController::class);
 
-    // 我们的用户列表接口，现在安全了
-    Route::get('/users', [UserController::class, 'index']);
+    // 🌟 为重置密码单独加一条路由
+    Route::patch('users/{user}/reset-password', [UserController::class, 'resetPassword']);
     
     // 退出登录接口
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -144,6 +154,30 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // 🌟 财务专属的独立大盘路由
     Route::get('finance/overview', [FinanceOverviewController::class, 'getOverview']);
+    
+    // 时间账户管理路由
+    // 获取某个时间账户的历史入账记录 (需放在 apiResource 上面防止被 {id} 拦截)
+    Route::get('time-accounts/{id}/allocations', [TimeAccountController::class, 'allocations']);
+    Route::apiResource('time-accounts', TimeAccountController::class);
+
+    // 时间分配大盘、规则与执行路由
+    Route::get('time-allocations/stats', [TimeAllocationController::class, 'stats']);
+    Route::get('time-allocations/rules', [TimeAllocationController::class, 'rules']);
+    Route::post('time-allocations/rules', [TimeAllocationController::class, 'saveRule']);
+    Route::post('time-allocations/execute', [TimeAllocationController::class, 'execute']);
+    Route::get('time-allocations/logs', [TimeAllocationController::class, 'logs']);
+    Route::delete('time-allocations/logs/{id}', [TimeAllocationController::class, 'deleteLog']);
+    Route::post('time-allocations/auto-run', [TimeAllocationController::class, 'runDailyAutoAllocation']);
+    Route::put('time-allocations/rules/{id}/status', [TimeAllocationController::class, 'toggleStatus']);
+    // 获取所有的任务类型及其绑定关系
+    Route::get('/task-mappings', [TimeAllocationController::class, 'getTaskMappings']);
+
+    // 保存或更新某个任务类型的绑定关系
+    Route::post('/task-mappings', [TimeAllocationController::class, 'saveTaskMapping']);
+    
+
+    // 时间大盘概览
+    Route::get('/time-dashboard', [TimeDashboardController::class, 'index']);
         
 });
 // routes/api.php
@@ -155,3 +189,8 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
         'permissions' => $user->getAllPermissions()->pluck('name'), // 👈 前端就是靠这个拿到权限的
     ];
 });
+
+    //打印日任务清单
+    Route::get('/print/daily', [\App\Http\Controllers\PrintReportController::class, 'dailyTasks']);
+    //打印月任务清单
+    Route::get('/print/monthly', [\App\Http\Controllers\PrintReportController::class, 'monthlyTasks']);

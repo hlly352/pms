@@ -20,6 +20,7 @@ class ProjectController extends Controller
         // 1. 初始化查询构造器，并加载所需的所有关联关系
         $query = Project::with([
             'goal.goalType', 
+            'timeAccount', // 🌟 新增：一并加载绑定的时间账户信息
             'stages.segments', 
             'stages.steps.task' => function($q) {
                 $q->withCount([
@@ -60,11 +61,12 @@ class ProjectController extends Controller
     // ==========================================
     public function update(Request $request, Project $project)
     {
-        // 1. 验证数据 (🌟 增加了 planned_budget 验证)
+        // 1. 验证数据 (🌟 增加了 time_account_id 验证)
         $validated = $request->validate([
             'goal_id' => 'required|exists:goals,id',
             'name' => 'required|string',
-            'planned_budget' => 'nullable|numeric|min:0', // 👈 新增总预算验证
+            'planned_budget' => 'nullable|numeric|min:0',
+            'time_account_id' => 'nullable|integer', // 👈 新增验证：关联的时间池
             'expected_result' => 'nullable|string',
             'remark' => 'nullable|string',
             'goal_weight' => 'required|integer|min:1|max:100',
@@ -76,11 +78,12 @@ class ProjectController extends Controller
         ]);
 
         return DB::transaction(function () use ($request, $project) {
-            // A. 更新项目主表信息 (🌟 增加了 planned_budget)
+            // A. 更新项目主表信息 (🌟 增加了 time_account_id)
             $project->update([
                 'goal_id' => $request->goal_id,
                 'name' => $request->name,
-                'planned_budget' => $request->planned_budget, // 👈 保存总预算
+                'planned_budget' => $request->planned_budget,
+                'time_account_id' => $request->time_account_id, // 👈 保存绑定的时间池
                 'expected_result' => $request->expected_result,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
@@ -180,11 +183,12 @@ class ProjectController extends Controller
     // ==========================================
     public function store(Request $request)
     {
-        // 1. 验证 (🌟 增加了 planned_budget 验证)
+        // 1. 验证 (🌟 增加了 time_account_id 验证)
         $validated = $request->validate([
             'goal_id' => 'required|exists:goals,id',
             'name' => 'required|string',
-            'planned_budget' => 'nullable|numeric|min:0', // 👈 新增总预算验证
+            'planned_budget' => 'nullable|numeric|min:0', 
+            'time_account_id' => 'nullable|integer', // 👈 新增验证：关联的时间池
             'expected_result' => 'required|string',
             'stages' => 'required|array',
             'stages.*.name' => 'required|string',
@@ -199,11 +203,12 @@ class ProjectController extends Controller
 
         // 2. 事务处理 (保证数据一致性)
         return DB::transaction(function () use ($request) {
-            // A. 创建项目主表 (🌟 增加了 planned_budget)
+            // A. 创建项目主表 (🌟 增加了 time_account_id)
             $project = Project::create([
                 'goal_id' => $request->goal_id,
                 'name' => $request->name,
-                'planned_budget' => $request->planned_budget, // 👈 保存总预算
+                'planned_budget' => $request->planned_budget,
+                'time_account_id' => $request->time_account_id, // 👈 记录绑定的时间池
                 'expected_result' => $request->expected_result,
                 'goal_weight' => $request->goal_weight,
                 'start_date' => $request->start_date,

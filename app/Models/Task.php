@@ -33,4 +33,8 @@ class Task extends Model
     {
         return $this->hasMany(TaskDetail::class);
     }
+    public function projectStageStep()
+    {
+        return $this->belongsTo(ProjectStageStep::class, 'project_stage_step_id');
+    }
 }

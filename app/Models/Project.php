@@ -14,6 +14,7 @@ class Project extends Model
         'goal_weight',
         'start_date',
         'end_date',
+        'time_account_id',
         'planned_budget', // 👈 一定要在模型里加上这行！
     ];
 
@@ -59,5 +60,10 @@ class Project extends Model
         return \App\Models\Transaction::where('project_id', $this->id)
                                       ->where('type', 'expense')
                                       ->sum('amount');
+    }
+    // 🌟 新增：与时间账户的关联关系
+    public function timeAccount()
+    {
+        return $this->belongsTo(TimeAccount::class, 'time_account_id');
     }
 }

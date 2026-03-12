@@ -11,7 +11,7 @@ return new class extends Migration
         // 1. 给任务打卡表增加“实际耗时”
         Schema::table('task_details', function (Blueprint $table) {
             // decimal(6,1) 支持如 1.5 小时
-            $table->decimal('actual_hours', 6, 1)->default(0)->after('status')->comment('单次打卡实际耗时(h)');
+            $table->decimal('actual_hours', 6, 2)->default(0)->after('status')->comment('单次打卡实际耗时(h)');
         });
 
         // 2. 给财务流水表增加“关联项目”

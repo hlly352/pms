@@ -24,23 +24,25 @@ class TaskService
             }
         }
         // 2. 重复规则 (按间隔天数累加)
+       // 2. 重复规则 (按间隔天数累加)
         elseif ($task->frequency === 'repeat' && $task->rule) {
             $items = $task->rule->details['items'] ?? [];
             
-            // 之前的倒序逻辑（如果还需要的话保留，不需要则注释）
-            // $items = array_reverse($items); 
-
-            $cursor = $today->copy();
+            // 🌟 游标从“今天”开始 (例如 3月9日)
+            $cursor = $today->copy(); 
 
             foreach ($items as $item) {
                 $daysInterval = intval($item['value']);
                 if ($daysInterval > 0) {
-                    $cursor->addDays($daysInterval);
+                    // 🌟 终极修正：在上一次日期的基础上累加 (间隔天数 + 1)
+                    // 第一次循环：9号 + (3+1)天 = 13号
+                    // 第二次循环：13号 + (5+1)天 = 19号
+                    // 第三次循环：19号 + (2+1)天 = 22号
+                    $cursor->addDays($daysInterval + 1);
                     $dates[] = $cursor->copy();
                 }
             }
         }
-
         // 3. 批量创建详情
         $this->createDetailsBatch($task, $dates);
 
@@ -201,7 +203,7 @@ class TaskService
                 'task_time' => $dateTimeStr
             ], [
                 'status' => 'pending',
-                'remark' => '第' . ($index + 1) . '次背诵',
+                'remark' => ($task->source === 'recitation' ? '背诵' : '任务') . ' 第' . ($index + 1) . '此',
             ]);
         }
     }

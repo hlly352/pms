@@ -12,20 +12,20 @@ class AuthController extends Controller
     // 登录接口
     public function login(Request $request)
     {
-        // 1. 验证前端传来的数据格式
+        // 1. 🌟 修改：验证前端传来的 username 而不是 email，去掉 email 格式验证
         $request->validate([
-            'email' => 'required|email',
+            'username' => 'required|string', 
             'password' => 'required',
         ]);
 
-        // 2. 尝试去数据库查找用户
-        $user = User::where('email', $request->email)->first();
+        // 2. 🌟 修改：去数据库查找用户时，用 name 字段去匹配前端传来的 username
+        $user = User::where('name', $request->username)->first();
 
         // 3. 检查用户是否存在，以及密码是否正确 (Hash::check)
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'code' => 401,
-                'msg' => '账号或密码错误', // 安全起见，通常不告诉别人具体是哪个错了
+                'msg' => '账号或密码错误', // 安全起见，不告诉具体是账号错还是密码错
             ]);
         }
 
