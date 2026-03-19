@@ -1,0 +1,71 @@
+services:
+  backend:
+    build: ./backend
+    container_name: laravel
+    networks:
+      - pms-network
+    volumes:
+      - ./backend:/var/www
+    depends_on:
+      - mysql
+
+  # 🌟 新增：专门用于跑 Laravel 定时任务调度的容器
+  scheduler:
+    build: ./backend
+    container_name: laravel_scheduler
+    networks:
+      - pms-network
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+    depends_on:
+      - mysql
+    # 每 60 秒执行一次 schedule:run
+    command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
+
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    networks:
+      - pms-network
+    environment:
+      MYSQL_DATABASE: pms
+      MYSQL_USER: pms
+      MYSQL_PASSWORD: Zhu121802t@
+      MYSQL_ROOT_PASSWORD: jiatailong
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  frontend:
+    build: ./frontend
+    container_name: vue
+    networks:
+      - pms-network
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "chmod +x node_modules/.bin/vite && npm run build"
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    networks:
+      - pms-network
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./frontend/dist:/var/www/vue
+      - ./backend/public:/var/www/backend/public
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+
+networks:
+  pms-network:
+    driver: bridge
